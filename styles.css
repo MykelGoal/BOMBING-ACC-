@@ -61,3 +61,11 @@
   .quick-form input,.note-field,.customer-dialog input,.customer-dialog textarea,.search-wrap input,.amount-input input{font-size:16px}
   .empty-state{padding:28px 12px}
 }
+
+/* In-app back navigation: the ← arrow appears whenever there is a previous
+   screen to return to; the phone back button uses the same history. */
+.topbar-left{display:flex;align-items:center}
+.back-arrow{display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 auto;margin-right:12px;padding:0;border:1px solid #bdc9bd;border-radius:50%;background:transparent;color:var(--green);font-size:18px;line-height:1;cursor:pointer;transition:.15s}
+.back-arrow:hover{background:#e9efe3}
+.back-arrow:active{transform:scale(.94)}
+@media(max-width:800px){.back-arrow{width:32px;height:32px;margin-right:9px;font-size:17px}}
