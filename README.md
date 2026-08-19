@@ -31,7 +31,7 @@ js/
 The app is wired to the supplied Supabase project and supports simple email-and-password accounts. A person opens the site, chooses **Create an account**, and creates their own private login; no administrator needs to know their email in advance.
 
 1. In **Supabase → SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). This creates the protected customer and transaction tables.
-2. In **Supabase → Authentication → Providers → Email**, keep email/password sign-in enabled. For initial testing, email confirmation can be turned off in Supabase’s Authentication settings; turn it back on before public launch.
+2. In **Supabase → Authentication → Sign In / Providers → Email**, keep **Enable email signup** on and turn **off** “Confirm email”. With confirmation off, creating an account signs the person straight in — no Gmail confirmation email is needed. The app attempts instant login automatically after signup; it only asks for an email confirmation when this setting is still enabled. (Turn “Confirm email” back on before a public launch if you want to verify email addresses.)
 
 Each account’s data is isolated by Row Level Security and syncs after every change.
 

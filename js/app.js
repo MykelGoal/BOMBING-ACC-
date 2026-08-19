@@ -13,6 +13,7 @@ let activeSuggestion = -1;
 function showView(name) {
   ['dashboard', 'people', 'detail'].forEach((view) => $(`#${view}View`).classList.toggle('hidden', view !== name));
   document.querySelectorAll('.nav-link[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
+  if (window.innerWidth <= 800) $('.sidebar').classList.remove('open');
   if (name === 'dashboard') renderDashboard();
   if (name === 'people') renderPeople();
 }
@@ -163,7 +164,7 @@ function savePersonEntry(event) {
 function renderAuthDialog() {
   const signingUp = authMode === 'signUp';
   $('#authTitle').textContent = signingUp ? 'Create your account' : 'Sign in';
-  $('#authCopy').textContent = signingUp ? 'Use your own email and password. Your records will stay private and sync on any device.' : 'Sign in to keep this ledger safely synced across your devices.';
+  $('#authCopy').textContent = signingUp ? 'Use your own email and password. Your account is created instantly and you are signed in right away — no confirmation email needed.' : 'Sign in to keep this ledger safely synced across your devices.';
   $('#authSubmit').textContent = signingUp ? 'Create account' : 'Sign in';
   $('#authSwitch').textContent = signingUp ? 'Already have an account? Sign in' : 'New here? Create an account';
   $('#authPassword').autocomplete = signingUp ? 'new-password' : 'current-password';
@@ -178,15 +179,27 @@ async function submitAuth(event) {
   event.preventDefault();
   const email = $('#authEmail').value.trim();
   const password = $('#authPassword').value;
+  const message = $('#authFormMessage');
   try {
     if (authMode === 'signUp') {
       const result = await signUpWithEmail(email, password);
-      if (!result.session) setMessage($('#authFormMessage'), 'Account created. Check the email inbox to confirm the account.', true);
-      else $('#authDialog').close();
+      // With "Confirm email" turned off in the Supabase dashboard, signUp
+      // returns a session right away: the account is created AND signed in.
+      if (result.session) { $('#authDialog').close(); return; }
+      // No session means the Supabase project still requires an email
+      // confirmation. Try signing in directly anyway — this succeeds once
+      // "Confirm email" is turned off, so signup becomes instant.
+      try {
+        await signInWithEmail(email, password);
+        $('#authDialog').close();
+      } catch (_) {
+        setMessage(message, 'Account created, but this Supabase project still requires an email confirmation before signing in. To create accounts and log in instantly without the email, turn off “Confirm email” in Supabase → Authentication → Sign In / Providers → Email, then create the account again.', true);
+      }
     } else {
-      await signInWithEmail(email, password); $('#authDialog').close();
+      await signInWithEmail(email, password);
+      $('#authDialog').close();
     }
-  } catch (error) { setMessage($('#authFormMessage'), error.message || 'Could not sign in. Please try again.'); }
+  } catch (error) { setMessage(message, error.message || 'Could not sign in. Please try again.'); }
 }
 
 function openCustomerDialog() {
@@ -277,6 +290,10 @@ function setupEvents() {
     document.querySelectorAll('.type-choice').forEach((item) => item.classList.toggle('selected', item === button));
   }));
   $('#menuBtn').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
+  // On phones, tapping the page outside the menu closes the drawer.
+  $('main').addEventListener('click', (event) => {
+    if (window.innerWidth <= 800 && !event.target.closest('#menuBtn')) $('.sidebar').classList.remove('open');
+  });
 }
 
 function init() {
