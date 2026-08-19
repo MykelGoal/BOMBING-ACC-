@@ -5,6 +5,7 @@ A clean personal debt record book for everyday lending. Record debts in one line
 ## What it does
 
 - **Fast entry:** write `Michael +500` when you lend money and `Michael -200` when Michael pays back.
+- **Smart name matching:** start typing an existing name such as `DJ`; matching people appear instantly. Select one with a click or the arrow keys, then finish the amount.
 - **Live totals:** the dashboard calculates every outstanding balance automatically.
 - **Full history:** each transaction carries its exact saved date and time.
 - **Correction controls:** each history item has **Edit** and **Delete** actions. Deleting a mistaken entry asks for confirmation and recalculates the balance immediately.

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0e3b2d" />
-  <title>Ledgerly — Personal debt book</title>
+  <title>AJ Dolly Ledger — Personal debt book</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="#" aria-label="Ledgerly home"><span class="brand-mark">L</span><span>ledgerly</span></a>
+      <a class="brand" href="#" aria-label="AJ Dolly Ledger home"><span class="brand-mark">A</span><span>AJ Dolly</span></a>
       <nav aria-label="Main navigation">
         <button class="nav-link active" data-view="dashboard"><span class="nav-icon">▦</span>Overview</button>
         <button class="nav-link" data-view="people"><span class="nav-icon">♙</span>People <span id="personCount" class="count-pill">0</span></button>
@@ -27,7 +27,7 @@
     <main>
       <header class="topbar">
         <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
-        <div id="headerText"><p class="eyebrow">YOUR PERSONAL LEDGER</p><h1>Good morning, <em>there.</em></h1></div>
+        <div id="headerText"><p class="eyebrow">AJ DOLLY VENTURES · PERSONAL LEDGER</p><h1>Good morning, <em>there.</em></h1></div>
         <div class="header-actions"><span class="today" id="today"></span><button class="add-button" id="newEntryBtn"><span>+</span> Add entry</button></div>
       </header>
 
@@ -41,8 +41,8 @@
           <div class="entry-intro"><p class="eyebrow">NEW RECORD</p><h2>What happened?</h2><p>One line is all you need.</p></div>
           <form id="quickEntryForm" class="quick-form">
             <label for="quickEntry">Record a debt or repayment</label>
-            <div class="input-wrap"><input id="quickEntry" autocomplete="off" placeholder="e.g. Michael +500" aria-describedby="entryHelp" /><button type="submit">Save <span>↵</span></button></div>
-            <p id="entryHelp" class="input-help">Use <b>+</b> for money lent out and <b>−</b> for money paid back.</p>
+            <div class="entry-autocomplete"><div class="input-wrap"><input id="quickEntry" autocomplete="off" placeholder="e.g. Michael +500" aria-describedby="entryHelp" aria-autocomplete="list" aria-controls="entrySuggestions" /><button type="submit">Save <span>↵</span></button></div><div id="entrySuggestions" class="entry-suggestions hidden" role="listbox"></div></div>
+            <p id="entryHelp" class="input-help">Start typing an existing name to select it quickly. Use <b>+</b> for money lent out and <b>−</b> for money paid back.</p>
             <p class="form-message" id="formMessage" role="status"></p>
           </form>
         </div>

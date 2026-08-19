@@ -1,9 +1,11 @@
 import { addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
-import { money, parseQuickEntry } from './format.js';
+import { escapeHtml, money, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
 let activePerson = null;
 let selectedType = 'debt';
+let suggestedPeople = [];
+let activeSuggestion = -1;
 
 function showView(name) {
   ['dashboard', 'people', 'detail'].forEach((view) => $(`#${view}View`).classList.toggle('hidden', view !== name));
@@ -79,6 +81,54 @@ function bindTransactionActions(person) {
   }));
 }
 
+function currentNameQuery(value) {
+  // Everything before + or - is the name the person is looking for.
+  return value.split(/[+-]/, 1)[0].trim();
+}
+
+function hideSuggestions() {
+  $('#entrySuggestions').classList.add('hidden');
+  activeSuggestion = -1;
+}
+
+function renderSuggestions() {
+  const field = $('#quickEntry');
+  const query = currentNameQuery(field.value).toLowerCase();
+  if (!query) return hideSuggestions();
+  suggestedPeople = getPeople().filter((person) => person.name.toLowerCase().startsWith(query)).slice(0, 6);
+  // A fully typed single match does not need to get in the way.
+  if (!suggestedPeople.length || (suggestedPeople.length === 1 && suggestedPeople[0].name.toLowerCase() === query)) return hideSuggestions();
+  $('#entrySuggestions').innerHTML = suggestedPeople.map((person, index) => `<button type="button" class="suggestion ${index === activeSuggestion ? 'active' : ''}" data-suggestion="${index}" role="option"><span class="avatar">${escapeHtml(person.name.charAt(0).toUpperCase())}</span><span>${escapeHtml(person.name)}</span><small>${money(person.balance)}</small></button>`).join('');
+  $('#entrySuggestions').classList.remove('hidden');
+  $('#entrySuggestions').querySelectorAll('[data-suggestion]').forEach((button) => button.addEventListener('mousedown', (event) => {
+    event.preventDefault(); chooseSuggestion(Number(button.dataset.suggestion));
+  }));
+}
+
+function chooseSuggestion(index) {
+  const person = suggestedPeople[index];
+  if (!person) return;
+  const field = $('#quickEntry');
+  const namePart = currentNameQuery(field.value);
+  const remainder = field.value.slice(namePart.length).trimStart();
+  field.value = `${person.name}${remainder ? ` ${remainder}` : ' '}`;
+  hideSuggestions();
+  field.focus();
+}
+
+function handleQuickEntryKeys(event) {
+  if ($('#entrySuggestions').classList.contains('hidden')) return;
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    activeSuggestion = event.key === 'ArrowDown' ? Math.min(activeSuggestion + 1, suggestedPeople.length - 1) : Math.max(activeSuggestion - 1, 0);
+    renderSuggestions();
+  }
+  if (event.key === 'Enter' && activeSuggestion >= 0) {
+    event.preventDefault(); chooseSuggestion(activeSuggestion);
+  }
+  if (event.key === 'Escape') hideSuggestions();
+}
+
 function saveQuickEntry(event) {
   event.preventDefault();
   const entry = parseQuickEntry($('#quickEntry').value);
@@ -112,6 +162,9 @@ function downloadExport() {
 
 function setupEvents() {
   $('#quickEntryForm').addEventListener('submit', saveQuickEntry);
+  $('#quickEntry').addEventListener('input', () => { activeSuggestion = -1; renderSuggestions(); });
+  $('#quickEntry').addEventListener('keydown', handleQuickEntryKeys);
+  $('#quickEntry').addEventListener('blur', () => window.setTimeout(hideSuggestions, 120));
   $('#personEntryForm').addEventListener('submit', savePersonEntry);
   $('#newEntryBtn').addEventListener('click', () => { showView('dashboard'); $('#quickEntry').focus(); });
   $('#backBtn').addEventListener('click', () => showView('people'));
