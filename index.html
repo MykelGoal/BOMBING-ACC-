@@ -32,7 +32,7 @@
       <header class="topbar">
         <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
         <div id="headerText"><p class="eyebrow">AJ DOLLY VENTURES · PERSONAL LEDGER</p><h1>Good morning, <em>there.</em></h1></div>
-        <div class="header-actions"><span class="cloud-state" id="cloudState">Saved on this device</span><span class="today" id="today"></span><button class="add-button secondary" id="authBtn">Continue with Google</button><button class="add-button secondary" id="newCustomerBtn"><span>+</span> New customer</button><button class="add-button" id="newEntryBtn">Add entry</button></div>
+        <div class="header-actions"><span class="cloud-state" id="cloudState">Saved on this device</span><span class="today" id="today"></span><button class="add-button secondary" id="authBtn">Sign in</button><button class="add-button secondary" id="newCustomerBtn"><span>+</span> New customer</button><button class="add-button" id="newEntryBtn">Add entry</button></div>
       </header>
 
       <section id="dashboardView" class="view">
@@ -73,6 +73,7 @@
     </main>
   </div>
   <dialog id="customerDialog" class="customer-dialog"><form id="customerForm" method="dialog"><div class="dialog-top"><div><p class="eyebrow">CUSTOMER REGISTER</p><h2>Add a new customer</h2></div><button class="close-dialog" type="button" id="closeCustomerDialog" aria-label="Close">×</button></div><p class="dialog-copy">Register a name once. This prevents small spelling mistakes from creating a different person.</p><label for="customerName">Customer name <b>*</b></label><input id="customerName" required maxlength="70" placeholder="e.g. DJ Whaly" /><label for="customerPhone">Phone number <span>optional</span></label><input id="customerPhone" inputmode="tel" maxlength="25" placeholder="e.g. 080 1234 5678" /><label for="customerNote">Customer note <span>optional</span></label><textarea id="customerNote" maxlength="200" placeholder="e.g. Works at Market Street"></textarea><p id="customerFormMessage" class="form-message" role="status"></p><button class="wide-save" type="submit">Register customer</button></form></dialog>
+  <dialog id="authDialog" class="customer-dialog"><form id="authForm" method="dialog"><div class="dialog-top"><div><p class="eyebrow">PRIVATE CLOUD ACCOUNT</p><h2 id="authTitle">Sign in</h2></div><button class="close-dialog" type="button" id="closeAuthDialog" aria-label="Close">×</button></div><p class="dialog-copy" id="authCopy">Sign in to keep this ledger safely synced across your devices.</p><label for="authEmail">Email address</label><input id="authEmail" type="email" required autocomplete="email" placeholder="you@gmail.com" /><label for="authPassword">Password</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="At least 6 characters" /><p id="authFormMessage" class="form-message" role="status"></p><button class="wide-save" id="authSubmit" type="submit">Sign in</button><button class="auth-switch" type="button" id="authSwitch">New here? Create an account</button></form></dialog>
   <div id="toast" class="toast" role="status"></div>
   <script type="module" src="js/app.js"></script>
 </body>

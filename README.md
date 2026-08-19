@@ -28,12 +28,12 @@ js/
 
 ## Cloud login and sync
 
-The app is wired to the supplied Supabase project and supports Google sign-in. Before deploying it, the project owner must complete these two one-time dashboard steps:
+The app is wired to the supplied Supabase project and supports simple email-and-password accounts. A person opens the site, chooses **Create an account**, and creates their own private login; no administrator needs to know their email in advance.
 
 1. In **Supabase → SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). This creates the protected customer and transaction tables.
-2. In **Supabase → Authentication → Providers → Google**, enable Google, add a Google OAuth Client ID and Client Secret, then add the website URL to the allowed redirect URLs. Never commit or share the Google Client Secret.
+2. In **Supabase → Authentication → Providers → Email**, keep email/password sign-in enabled. For initial testing, email confirmation can be turned off in Supabase’s Authentication settings; turn it back on before public launch.
 
-After that, customers choose **Continue with Google**. Their data is isolated by Row Level Security and syncs after each change.
+Each account’s data is isolated by Row Level Security and syncs after every change.
 
 ## Run locally
 

@@ -54,9 +54,15 @@ function schedulePush(event) {
   syncTimer = setTimeout(() => pushLedger(event.detail), 650);
 }
 
-export async function signInWithGoogle() {
-  const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } });
+export async function signInWithEmail(email, password) {
+  const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
+}
+
+export async function signUpWithEmail(email, password) {
+  const { data, error } = await client.auth.signUp({ email, password });
+  if (error) throw error;
+  return data;
 }
 
 export async function signOut() { await client.auth.signOut(); }

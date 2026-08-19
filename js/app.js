@@ -1,11 +1,12 @@
 import { addCustomer, addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
-import { initCloud, signInWithGoogle, signOut } from './cloud.js';
+import { initCloud, signInWithEmail, signOut, signUpWithEmail } from './cloud.js';
 import { escapeHtml, money, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
 let activePerson = null;
 let selectedType = 'debt';
 let installPrompt = null;
+let authMode = 'signIn';
 let suggestedPeople = [];
 let activeSuggestion = -1;
 
@@ -159,6 +160,35 @@ function savePersonEntry(event) {
   openPerson(activePerson);
 }
 
+function renderAuthDialog() {
+  const signingUp = authMode === 'signUp';
+  $('#authTitle').textContent = signingUp ? 'Create your account' : 'Sign in';
+  $('#authCopy').textContent = signingUp ? 'Use your own email and password. Your records will stay private and sync on any device.' : 'Sign in to keep this ledger safely synced across your devices.';
+  $('#authSubmit').textContent = signingUp ? 'Create account' : 'Sign in';
+  $('#authSwitch').textContent = signingUp ? 'Already have an account? Sign in' : 'New here? Create an account';
+  $('#authPassword').autocomplete = signingUp ? 'new-password' : 'current-password';
+}
+
+function openAuthDialog() {
+  $('#authForm').reset(); setMessage($('#authFormMessage'), ''); renderAuthDialog();
+  $('#authDialog').showModal(); $('#authEmail').focus();
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  const email = $('#authEmail').value.trim();
+  const password = $('#authPassword').value;
+  try {
+    if (authMode === 'signUp') {
+      const result = await signUpWithEmail(email, password);
+      if (!result.session) setMessage($('#authFormMessage'), 'Account created. Check the email inbox to confirm the account.', true);
+      else $('#authDialog').close();
+    } else {
+      await signInWithEmail(email, password); $('#authDialog').close();
+    }
+  } catch (error) { setMessage($('#authFormMessage'), error.message || 'Could not sign in. Please try again.'); }
+}
+
 function openCustomerDialog() {
   $('#customerForm').reset();
   setMessage($('#customerFormMessage'), '');
@@ -220,8 +250,11 @@ function setupEvents() {
   $('#newCustomerBtn').addEventListener('click', openCustomerDialog);
   $('#authBtn').addEventListener('click', async () => {
     if ($('#authBtn').dataset.signedIn) { await signOut(); return; }
-    try { await signInWithGoogle(); } catch (_) { toast('Google sign-in could not start. Please try again.'); }
+    openAuthDialog();
   });
+  $('#authForm').addEventListener('submit', submitAuth);
+  $('#authSwitch').addEventListener('click', () => { authMode = authMode === 'signUp' ? 'signIn' : 'signUp'; renderAuthDialog(); });
+  $('#closeAuthDialog').addEventListener('click', () => $('#authDialog').close());
   $('#installBtn').addEventListener('click', installApplication);
   $('#customerForm').addEventListener('submit', registerCustomer);
   $('#closeCustomerDialog').addEventListener('click', () => $('#customerDialog').close());
@@ -257,7 +290,7 @@ function init() {
     onUser: (user) => {
       const button = $('#authBtn');
       button.dataset.signedIn = user ? 'true' : '';
-      button.textContent = user ? 'Sign out' : 'Continue with Google';
+      button.textContent = user ? 'Sign out' : 'Sign in';
       $('#cloudState').textContent = user ? '☁ Syncing securely' : 'Saved on this device';
     },
     onReady: () => { renderDashboard(); if (!$('#detailView').classList.contains('hidden') && activePerson) openPerson(activePerson); }
