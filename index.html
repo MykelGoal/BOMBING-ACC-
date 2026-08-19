@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0e3b2d" />
+  <title>Ledgerly — Personal debt book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Ledgerly home"><span class="brand-mark">L</span><span>ledgerly</span></a>
+      <nav aria-label="Main navigation">
+        <button class="nav-link active" data-view="dashboard"><span class="nav-icon">▦</span>Overview</button>
+        <button class="nav-link" data-view="people"><span class="nav-icon">♙</span>People <span id="personCount" class="count-pill">0</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="nav-link" id="exportBtn"><span class="nav-icon">⇩</span>Export records</button>
+        <div class="privacy-note"><span>●</span><p>Your records stay private<br>on this device.</p></div>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
+        <div id="headerText"><p class="eyebrow">YOUR PERSONAL LEDGER</p><h1>Good morning, <em>there.</em></h1></div>
+        <div class="header-actions"><span class="today" id="today"></span><button class="add-button" id="newEntryBtn"><span>+</span> Add entry</button></div>
+      </header>
+
+      <section id="dashboardView" class="view">
+        <div class="hero-grid">
+          <article class="total-card"><div class="card-orbit orbit-one"></div><div class="card-orbit orbit-two"></div><p>OUTSTANDING BALANCE</p><h2 id="totalOutstanding">₦0</h2><div class="total-foot"><span id="totalPeople">0 people owe you</span><span class="live-dot">● LIVE</span></div></article>
+          <article class="tip-card"><span class="tip-icon">✦</span><div><p class="eyebrow">QUICK TIP</p><h3>Keep it simple.</h3><p>Type <strong>name + amount</strong> to add a debt, or <strong>name - amount</strong> when they pay you back.</p></div></article>
+        </div>
+
+        <div class="entry-panel">
+          <div class="entry-intro"><p class="eyebrow">NEW RECORD</p><h2>What happened?</h2><p>One line is all you need.</p></div>
+          <form id="quickEntryForm" class="quick-form">
+            <label for="quickEntry">Record a debt or repayment</label>
+            <div class="input-wrap"><input id="quickEntry" autocomplete="off" placeholder="e.g. Michael +500" aria-describedby="entryHelp" /><button type="submit">Save <span>↵</span></button></div>
+            <p id="entryHelp" class="input-help">Use <b>+</b> for money lent out and <b>−</b> for money paid back.</p>
+            <p class="form-message" id="formMessage" role="status"></p>
+          </form>
+        </div>
+
+        <section class="ledger-section">
+          <div class="section-title"><div><p class="eyebrow">AT A GLANCE</p><h2>People who owe you</h2></div><button class="text-button" data-view="people">View all <span>→</span></button></div>
+          <div id="debtorList" class="debtor-list"></div>
+          <div id="emptyState" class="empty-state"><div class="empty-illustration">+</div><h3>Your record book is empty.</h3><p>Add your first entry above. For example, <b>Michael +500</b>.</p></div>
+        </section>
+      </section>
+
+      <section id="peopleView" class="view hidden">
+        <div class="people-heading"><div><p class="eyebrow">YOUR RECORD BOOK</p><h2>All people</h2></div><div class="search-wrap"><span>⌕</span><input id="searchPeople" placeholder="Find a person" /></div></div>
+        <div id="allPeopleList" class="debtor-list all-list"></div>
+        <div id="peopleEmpty" class="empty-state hidden"><div class="empty-illustration">⌕</div><h3>No one found.</h3><p>Try another name or add a new entry.</p></div>
+      </section>
+
+      <section id="detailView" class="view hidden">
+        <button class="back-button" id="backBtn">← Back to people</button>
+        <div class="person-hero"><div class="avatar large" id="detailAvatar">M</div><div><p class="eyebrow">PERSONAL RECORD</p><h2 id="detailName">Michael</h2><p id="detailMeta">0 entries recorded</p></div><div class="person-total"><p>CURRENT BALANCE</p><strong id="detailBalance">₦0</strong></div></div>
+        <div class="detail-grid"><section class="history-card"><div class="section-title"><div><p class="eyebrow">ACTIVITY</p><h2>Transaction history</h2></div><button id="deletePersonBtn" class="delete-link">Clear record</button></div><div id="historyList" class="history-list"></div></section><aside class="side-entry"><p class="eyebrow">ADD TO RECORD</p><h3>New entry for<br><span id="sidePersonName">Michael</span></h3><form id="personEntryForm"><label for="personAmount">Amount</label><div class="amount-input"><span>₦</span><input id="personAmount" inputmode="decimal" placeholder="0" /></div><div class="entry-type"><button type="button" class="type-choice selected" data-type="debt">They borrowed <b>+</b></button><button type="button" class="type-choice" data-type="payment">They paid back <b>−</b></button></div><button class="wide-save" type="submit">Save entry</button><p class="form-message" id="personFormMessage" role="status"></p></form></aside></div>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
