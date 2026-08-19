@@ -10,13 +10,30 @@ export const shortDate = (iso) => new Intl.DateTimeFormat('en-NG', {
   day: 'numeric', month: 'short', year: 'numeric'
 }).format(new Date(iso));
 
-/** Accepts natural one-line entries such as "Michael +500" or "Michael -200". */
+/** Adds and subtracts figures such as 500+200+300 or 500+200-100. */
+export function parseAmountExpression(input) {
+  const cleaned = String(input ?? '').trim().replace(/[₦,\s]/gi, '').replace(/^NGN/i, '');
+  if (!cleaned || /[^0-9.+-]/.test(cleaned)) return null;
+  const expression = cleaned.replace(/^\+/, '');
+  if (!/^\d/.test(expression)) return null;
+  const tokens = expression.match(/[+-]?\d+(?:\.\d{1,2})?/g);
+  if (!tokens || tokens.join('') !== expression) return null;
+  let total = 0;
+  for (const token of tokens) {
+    const value = Number(token);
+    if (!Number.isFinite(value)) return null;
+    total += value;
+  }
+  return total > 0 ? Number(total.toFixed(2)) : null;
+}
+
+/** Accepts "Michael +500", "Michael -200", or "Michael +500+200+300+850". */
 export function parseQuickEntry(input) {
-  const match = input.trim().match(/^(.+?)\s*([+-])\s*(?:₦|NGN\s*)?([\d,]+(?:\.\d{1,2})?)\s*$/i);
+  const match = input.trim().match(/^(.+?)\s*([+-])\s*(.+)$/);
   if (!match) return null;
   const person = match[1].trim();
-  const amount = Number(match[3].replaceAll(',', ''));
-  if (!person || !Number.isFinite(amount) || amount <= 0) return null;
+  const amount = parseAmountExpression(match[3]);
+  if (!person || amount == null) return null;
   return { person, amount, type: match[2] === '+' ? 'debt' : 'payment' };
 }
 
