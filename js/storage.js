@@ -42,6 +42,24 @@ export function removePerson(person) {
   save(data);
 }
 
+/** Deletes one mistaken transaction without affecting the rest of a person's history. */
+export function removeTransaction(transactionId) {
+  const data = loadData();
+  data.transactions = data.transactions.filter((item) => item.id !== transactionId);
+  save(data);
+}
+
+/** Correct a transaction in place while preserving its original saved time. */
+export function updateTransaction(transactionId, { amount, type }) {
+  const data = loadData();
+  const transaction = data.transactions.find((item) => item.id === transactionId);
+  if (!transaction) return null;
+  transaction.amount = Number(amount);
+  transaction.type = type;
+  save(data);
+  return transaction;
+}
+
 export function getPeople() {
   const { transactions } = loadData();
   const people = new Map();

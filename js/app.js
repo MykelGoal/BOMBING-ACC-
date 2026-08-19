@@ -1,4 +1,4 @@
-import { addTransaction, exportRecords, getPeople, getPerson, removePerson } from './storage.js';
+import { addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
 import { money, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
@@ -50,9 +50,33 @@ function openPerson(name) {
   $('#detailBalance').textContent = money(person.balance);
   $('#detailMeta').textContent = `${person.transactions.length} ${person.transactions.length === 1 ? 'entry' : 'entries'} recorded`;
   $('#historyList').innerHTML = person.transactions.map(transactionRow).join('');
+  bindTransactionActions(person);
   $('#personAmount').value = '';
   setMessage($('#personFormMessage'), '');
   showView('detail');
+}
+
+function bindTransactionActions(person) {
+  $('#historyList').querySelectorAll('[data-delete-transaction]').forEach((button) => button.addEventListener('click', () => {
+    if (!window.confirm('Delete this entry? The balance will update immediately.')) return;
+    removeTransaction(button.dataset.deleteTransaction);
+    const updated = getPerson(person.name);
+    toast('Entry deleted and balance updated');
+    updated ? openPerson(updated.name) : showView('people');
+  }));
+
+  $('#historyList').querySelectorAll('[data-edit-transaction]').forEach((button) => button.addEventListener('click', () => {
+    const transaction = person.transactions.find((item) => item.id === button.dataset.editTransaction);
+    if (!transaction) return;
+    const response = window.prompt('Correct the amount for this entry:', transaction.amount);
+    if (response === null) return;
+    const amount = Number(response.replaceAll(',', '').trim());
+    if (!Number.isFinite(amount) || amount <= 0) return toast('Please enter an amount greater than zero');
+    const isPayment = window.confirm('Is this a repayment? Select OK for payment received, or Cancel for money borrowed.');
+    updateTransaction(transaction.id, { amount, type: isPayment ? 'payment' : 'debt' });
+    toast('Entry corrected and balance updated');
+    openPerson(person.name);
+  }));
 }
 
 function saveQuickEntry(event) {

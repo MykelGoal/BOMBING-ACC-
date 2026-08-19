@@ -7,6 +7,7 @@ A clean personal debt record book for everyday lending. Record debts in one line
 - **Fast entry:** write `Michael +500` when you lend money and `Michael -200` when Michael pays back.
 - **Live totals:** the dashboard calculates every outstanding balance automatically.
 - **Full history:** each transaction carries its exact saved date and time.
+- **Correction controls:** each history item has **Edit** and **Delete** actions. Deleting a mistaken entry asks for confirmation and recalculates the balance immediately.
 - **Personal records:** search or select a person to see their complete ledger and add entries directly.
 - **Private by default:** records are stored only in the browser's `localStorage`; no account or server is required.
 - **Export:** download all data as a CSV file from **Export records**.
