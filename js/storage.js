@@ -83,7 +83,7 @@ export function updateTransaction(transactionId, { amount, type }) {
   return transaction;
 }
 
-export function getPeople() {
+export function getPeople(sortBy = 'name') {
   const { customers, transactions } = loadData();
   const people = new Map(customers.map((customer) => [customer.name.toLowerCase(), { ...customer, balance: 0, count: 0, lastActivity: customer.createdAt }]));
   transactions.forEach((item) => {
@@ -94,7 +94,15 @@ export function getPeople() {
     current.count += 1;
     if (new Date(item.createdAt) > new Date(current.lastActivity)) current.lastActivity = item.createdAt;
   });
-  return [...people.values()].sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+  const list = [...people.values()];
+  if (sortBy === 'recent') {
+    return list.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+  }
+  if (sortBy === 'balance') {
+    return list.sort((a, b) => b.balance - a.balance || a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
+  }
+  // Default: Alphabetical order (A-Z)
+  return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
 }
 
 export function getPerson(name) {
