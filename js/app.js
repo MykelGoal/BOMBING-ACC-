@@ -1,4 +1,4 @@
-import { addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
+import { addCustomer, addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
 import { escapeHtml, money, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
@@ -54,6 +54,7 @@ function openPerson(name) {
   $('#historyList').innerHTML = person.transactions.map(transactionRow).join('');
   bindTransactionActions(person);
   $('#personAmount').value = '';
+  $('#personNote').value = '';
   setMessage($('#personFormMessage'), '');
   showView('detail');
 }
@@ -133,9 +134,16 @@ function saveQuickEntry(event) {
   event.preventDefault();
   const entry = parseQuickEntry($('#quickEntry').value);
   if (!entry) return setMessage($('#formMessage'), 'Try a name and amount, e.g. “Michael +500”.');
-  addTransaction(entry);
+  const exactCustomer = getPeople().find((person) => person.name.toLowerCase() === entry.person.toLowerCase());
+  if (!exactCustomer) return setMessage($('#formMessage'), `“${entry.person}” is not registered yet. Add the customer first to avoid spelling mistakes.`);
+  try {
+    addTransaction({ ...entry, person: exactCustomer.name, note: $('#quickNote').value });
+  } catch (error) {
+    return setMessage($('#formMessage'), error.message);
+  }
   $('#quickEntry').value = '';
-  setMessage($('#formMessage'), `${entry.person}'s record was updated.`, true);
+  $('#quickNote').value = '';
+  setMessage($('#formMessage'), `${exactCustomer.name}'s record was updated.`, true);
   renderDashboard();
   toast('Entry saved');
 }
@@ -144,9 +152,31 @@ function savePersonEntry(event) {
   event.preventDefault();
   const amount = Number($('#personAmount').value.replaceAll(',', ''));
   if (!Number.isFinite(amount) || amount <= 0) return setMessage($('#personFormMessage'), 'Enter an amount greater than zero.');
-  addTransaction({ person: activePerson, amount, type: selectedType });
+  addTransaction({ person: activePerson, amount, type: selectedType, note: $('#personNote').value });
   toast('Entry saved');
   openPerson(activePerson);
+}
+
+function openCustomerDialog() {
+  $('#customerForm').reset();
+  setMessage($('#customerFormMessage'), '');
+  $('#customerDialog').showModal();
+  $('#customerName').focus();
+}
+
+function registerCustomer(event) {
+  event.preventDefault();
+  const name = $('#customerName').value.trim();
+  if (!name) return setMessage($('#customerFormMessage'), 'Enter the customer’s name.');
+  try {
+    const customer = addCustomer({ name, phone: $('#customerPhone').value, note: $('#customerNote').value });
+    $('#customerDialog').close();
+    renderDashboard();
+    toast(`${customer.name} was registered`);
+    openPerson(customer.name);
+  } catch (error) {
+    setMessage($('#customerFormMessage'), error.message);
+  }
 }
 
 function downloadExport() {
@@ -162,6 +192,9 @@ function downloadExport() {
 
 function setupEvents() {
   $('#quickEntryForm').addEventListener('submit', saveQuickEntry);
+  $('#newCustomerBtn').addEventListener('click', openCustomerDialog);
+  $('#customerForm').addEventListener('submit', registerCustomer);
+  $('#closeCustomerDialog').addEventListener('click', () => $('#customerDialog').close());
   $('#quickEntry').addEventListener('input', () => { activeSuggestion = -1; renderSuggestions(); });
   $('#quickEntry').addEventListener('keydown', handleQuickEntryKeys);
   $('#quickEntry').addEventListener('blur', () => window.setTimeout(hideSuggestions, 120));

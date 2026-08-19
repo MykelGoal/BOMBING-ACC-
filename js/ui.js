@@ -13,7 +13,7 @@ export function personRow(person) {
 export function transactionRow(transaction) {
   const isDebt = transaction.type === 'debt';
   return `<div class="history-row"><div class="history-symbol ${transaction.type}">${isDebt ? '+' : '−'}</div>
-    <div><div class="history-title">${isDebt ? 'Money borrowed' : 'Payment received'}</div><div class="history-date">${dateTime(transaction.createdAt)}</div></div>
+    <div><div class="history-title">${isDebt ? 'Money borrowed' : 'Payment received'}</div>${transaction.note ? `<div class="history-note">${escapeHtml(transaction.note)}</div>` : ''}<div class="history-date">${dateTime(transaction.createdAt)}</div></div>
     <div class="history-amount ${transaction.type}">${isDebt ? '+' : '−'}${money(transaction.amount)}</div>
     <div class="record-actions"><button class="record-action" data-edit-transaction="${transaction.id}" aria-label="Edit this entry" title="Edit entry">✎</button><button class="record-action danger" data-delete-transaction="${transaction.id}" aria-label="Delete this entry" title="Delete entry">×</button></div></div>`;
 }

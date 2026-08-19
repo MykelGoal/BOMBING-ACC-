@@ -28,7 +28,7 @@
       <header class="topbar">
         <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
         <div id="headerText"><p class="eyebrow">AJ DOLLY VENTURES · PERSONAL LEDGER</p><h1>Good morning, <em>there.</em></h1></div>
-        <div class="header-actions"><span class="today" id="today"></span><button class="add-button" id="newEntryBtn"><span>+</span> Add entry</button></div>
+        <div class="header-actions"><span class="today" id="today"></span><button class="add-button secondary" id="newCustomerBtn"><span>+</span> New customer</button><button class="add-button" id="newEntryBtn">Add entry</button></div>
       </header>
 
       <section id="dashboardView" class="view">
@@ -42,7 +42,8 @@
           <form id="quickEntryForm" class="quick-form">
             <label for="quickEntry">Record a debt or repayment</label>
             <div class="entry-autocomplete"><div class="input-wrap"><input id="quickEntry" autocomplete="off" placeholder="e.g. Michael +500" aria-describedby="entryHelp" aria-autocomplete="list" aria-controls="entrySuggestions" /><button type="submit">Save <span>↵</span></button></div><div id="entrySuggestions" class="entry-suggestions hidden" role="listbox"></div></div>
-            <p id="entryHelp" class="input-help">Start typing an existing name to select it quickly. Use <b>+</b> for money lent out and <b>−</b> for money paid back.</p>
+            <label class="optional-note" for="quickNote">Note <span>optional</span></label><input id="quickNote" class="note-field" maxlength="160" placeholder="e.g. Goods purchased, payment reference" />
+            <p id="entryHelp" class="input-help">Choose a registered customer from the suggestions. Use <b>+</b> for money lent out and <b>−</b> for money paid back.</p>
             <p class="form-message" id="formMessage" role="status"></p>
           </form>
         </div>
@@ -63,10 +64,11 @@
       <section id="detailView" class="view hidden">
         <button class="back-button" id="backBtn">← Back to people</button>
         <div class="person-hero"><div class="avatar large" id="detailAvatar">M</div><div><p class="eyebrow">PERSONAL RECORD</p><h2 id="detailName">Michael</h2><p id="detailMeta">0 entries recorded</p></div><div class="person-total"><p>CURRENT BALANCE</p><strong id="detailBalance">₦0</strong></div></div>
-        <div class="detail-grid"><section class="history-card"><div class="section-title"><div><p class="eyebrow">ACTIVITY</p><h2>Transaction history</h2></div><button id="deletePersonBtn" class="delete-link">Clear record</button></div><div id="historyList" class="history-list"></div></section><aside class="side-entry"><p class="eyebrow">ADD TO RECORD</p><h3>New entry for<br><span id="sidePersonName">Michael</span></h3><form id="personEntryForm"><label for="personAmount">Amount</label><div class="amount-input"><span>₦</span><input id="personAmount" inputmode="decimal" placeholder="0" /></div><div class="entry-type"><button type="button" class="type-choice selected" data-type="debt">They borrowed <b>+</b></button><button type="button" class="type-choice" data-type="payment">They paid back <b>−</b></button></div><button class="wide-save" type="submit">Save entry</button><p class="form-message" id="personFormMessage" role="status"></p></form></aside></div>
+        <div class="detail-grid"><section class="history-card"><div class="section-title"><div><p class="eyebrow">ACTIVITY</p><h2>Transaction history</h2></div><button id="deletePersonBtn" class="delete-link">Clear record</button></div><div id="historyList" class="history-list"></div></section><aside class="side-entry"><p class="eyebrow">ADD TO RECORD</p><h3>New entry for<br><span id="sidePersonName">Michael</span></h3><form id="personEntryForm"><label for="personAmount">Amount</label><div class="amount-input"><span>₦</span><input id="personAmount" inputmode="decimal" placeholder="0" /></div><div class="entry-type"><button type="button" class="type-choice selected" data-type="debt">They borrowed <b>+</b></button><button type="button" class="type-choice" data-type="payment">They paid back <b>−</b></button></div><label class="optional-note" for="personNote">Note <span>optional</span></label><input id="personNote" class="note-field" maxlength="160" placeholder="What was this for?" /><button class="wide-save" type="submit">Save entry</button><p class="form-message" id="personFormMessage" role="status"></p></form></aside></div>
       </section>
     </main>
   </div>
+  <dialog id="customerDialog" class="customer-dialog"><form id="customerForm" method="dialog"><div class="dialog-top"><div><p class="eyebrow">CUSTOMER REGISTER</p><h2>Add a new customer</h2></div><button class="close-dialog" type="button" id="closeCustomerDialog" aria-label="Close">×</button></div><p class="dialog-copy">Register a name once. This prevents small spelling mistakes from creating a different person.</p><label for="customerName">Customer name <b>*</b></label><input id="customerName" required maxlength="70" placeholder="e.g. DJ Whaly" /><label for="customerPhone">Phone number <span>optional</span></label><input id="customerPhone" inputmode="tel" maxlength="25" placeholder="e.g. 080 1234 5678" /><label for="customerNote">Customer note <span>optional</span></label><textarea id="customerNote" maxlength="200" placeholder="e.g. Works at Market Street"></textarea><p id="customerFormMessage" class="form-message" role="status"></p><button class="wide-save" type="submit">Register customer</button></form></dialog>
   <div id="toast" class="toast" role="status"></div>
   <script type="module" src="js/app.js"></script>
 </body>
