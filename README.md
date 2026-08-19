@@ -12,6 +12,7 @@ A clean personal debt record book for everyday lending. Record debts in one line
 - **Personal records:** search or select a person to see their complete ledger and add entries directly.
 - **Private by default:** records are stored only in the browser's `localStorage`; no account or server is required.
 - **Export:** download all data as a CSV file from **Export records**.
+- **Installable app:** the site is a Progressive Web App (PWA). On a supported browser, choose **Install app** or use the browser menu’s **Add to Home screen** option to use it like an app.
 
 ## Project structure
 

@@ -4,6 +4,7 @@ import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
 let activePerson = null;
 let selectedType = 'debt';
+let installPrompt = null;
 let suggestedPeople = [];
 let activeSuggestion = -1;
 
@@ -190,9 +191,33 @@ function downloadExport() {
   toast('Your records were exported');
 }
 
+async function installApplication() {
+  if (!installPrompt) return toast('Use your browser menu and choose “Add to Home screen”.');
+  installPrompt.prompt();
+  const result = await installPrompt.userChoice;
+  if (result.outcome === 'accepted') toast('AJ Dolly Ledger is installing');
+  installPrompt = null;
+  $('#installBtn').classList.add('hidden');
+}
+
+function setupPwa() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    $('#installBtn').classList.remove('hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    $('#installBtn').classList.add('hidden');
+    toast('AJ Dolly Ledger was installed');
+  });
+}
+
 function setupEvents() {
   $('#quickEntryForm').addEventListener('submit', saveQuickEntry);
   $('#newCustomerBtn').addEventListener('click', openCustomerDialog);
+  $('#installBtn').addEventListener('click', installApplication);
   $('#customerForm').addEventListener('submit', registerCustomer);
   $('#closeCustomerDialog').addEventListener('click', () => $('#customerDialog').close());
   $('#quickEntry').addEventListener('input', () => { activeSuggestion = -1; renderSuggestions(); });
@@ -218,6 +243,7 @@ function setupEvents() {
 
 function init() {
   $('#today').textContent = new Intl.DateTimeFormat('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date());
+  setupPwa();
   setupEvents(); renderDashboard();
 }
 
