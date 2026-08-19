@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aj-dolly-ledger-v2';
+const CACHE_NAME = 'aj-dolly-ledger-v3';
 const APP_SHELL = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './js/app.js', './js/cloud.js', './js/supabase-config.js', './js/storage.js', './js/format.js', './js/ui.js',

@@ -1,6 +1,6 @@
 import { addCustomer, addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
 import { initCloud, signInWithEmail, signOut, signUpWithEmail } from './cloud.js';
-import { escapeHtml, money, parseQuickEntry } from './format.js';
+import { escapeHtml, money, parseAmountExpression, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
 let activePerson = null;
@@ -225,7 +225,7 @@ function handleQuickEntryKeys(event) {
 function saveQuickEntry(event) {
   event.preventDefault();
   const entry = parseQuickEntry($('#quickEntry').value);
-  if (!entry) return setMessage($('#formMessage'), 'Try a name and amount, e.g. “Michael +500”.');
+  if (!entry) return setMessage($('#formMessage'), 'Try a name and amount, e.g. “Michael +500+200-100”.');
   const exactCustomer = getPeople().find((person) => person.name.toLowerCase() === entry.person.toLowerCase());
   if (!exactCustomer) return setMessage($('#formMessage'), `“${entry.person}” is not registered yet. Add the customer first to avoid spelling mistakes.`);
   try {
@@ -242,8 +242,8 @@ function saveQuickEntry(event) {
 
 function savePersonEntry(event) {
   event.preventDefault();
-  const amount = Number($('#personAmount').value.replaceAll(',', ''));
-  if (!Number.isFinite(amount) || amount <= 0) return setMessage($('#personFormMessage'), 'Enter an amount greater than zero.');
+  const amount = parseAmountExpression($('#personAmount').value);
+  if (amount == null) return setMessage($('#personFormMessage'), 'Enter an amount greater than zero. You can write 500+200-100.');
   try {
     addTransaction({ person: activePerson, amount, type: selectedType, note: $('#personNote').value });
   } catch (error) {
