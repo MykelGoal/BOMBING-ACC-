@@ -94,7 +94,9 @@ export function getPeople() {
     current.count += 1;
     if (new Date(item.createdAt) > new Date(current.lastActivity)) current.lastActivity = item.createdAt;
   });
-  return [...people.values()].sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+  // The register reads A → Z, ignoring capitals; a digit inside a name sorts
+  // numerically (Shop 2 before Shop 10), which matches a paper ledger.
+  return [...people.values()].sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base', numeric: true }));
 }
 
 export function getPerson(name) {

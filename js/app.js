@@ -147,6 +147,7 @@ function openPerson(name, { updateHistory = true } = {}) {
   bindTransactionActions(person);
   $('#personAmount').value = '';
   $('#personNote').value = '';
+  updateAmountPreview();
   setMessage($('#personFormMessage'), '');
   showView('detail', { person: person.name, updateHistory });
 }
@@ -251,6 +252,38 @@ function savePersonEntry(event) {
   }
   toast('Entry saved');
   openPerson(activePerson);
+}
+
+/** A phone's number keypad has no + or − key, so the sign buttons put the
+ *  sign straight into the amount field at the cursor: 500, tap +, then 200
+ *  becomes 500+200. On the person page, tapping a sign while the box is still
+ *  empty instead picks what the entry means (borrowed / paid back). */
+function insertSign(field, sign) {
+  if (!field.value.trim()) {
+    if (field.id === 'personAmount') {
+      selectedType = sign === '+' ? 'debt' : 'payment';
+      document.querySelectorAll('.type-choice').forEach((item) => item.classList.toggle('selected', item.dataset.type === selectedType));
+      toast(sign === '+' ? 'Sign set to + — money borrowed' : 'Sign set to − — money paid back');
+    } else {
+      toast('Type the customer’s name first, then tap + or −');
+    }
+    field.focus();
+    return;
+  }
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? field.value.length;
+  field.value = field.value.slice(0, start) + sign + field.value.slice(end);
+  field.focus();
+  field.setSelectionRange(start + 1, start + 1);
+  // Keep dependent widgets (name suggestions, live total) in sync.
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/** Shows the running total of a combined amount such as 500+200−100. */
+function updateAmountPreview() {
+  const value = $('#personAmount').value;
+  const amount = value.trim() ? parseAmountExpression(value) : null;
+  $('#personAmountPreview').textContent = amount == null ? '' : `Total: ${money(amount)}`;
 }
 
 function renderAuthDialog() {
@@ -371,6 +404,11 @@ function setupEvents() {
   $('#quickEntry').addEventListener('input', () => { activeSuggestion = -1; renderSuggestions(); });
   $('#quickEntry').addEventListener('keydown', handleQuickEntryKeys);
   $('#quickEntry').addEventListener('blur', () => window.setTimeout(hideSuggestions, 120));
+  document.querySelectorAll('.sign-key').forEach((button) => button.addEventListener('click', () => {
+    const field = document.getElementById(button.dataset.signTarget);
+    if (field) insertSign(field, button.dataset.sign);
+  }));
+  $('#personAmount').addEventListener('input', updateAmountPreview);
   $('#personEntryForm').addEventListener('submit', savePersonEntry);
   $('#newEntryBtn').addEventListener('click', () => { showView('dashboard'); $('#quickEntry').focus(); });
   $('#backBtn').addEventListener('click', () => { if (navDepth > 0) history.back(); else showView('people'); });
