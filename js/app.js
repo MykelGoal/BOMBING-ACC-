@@ -9,6 +9,7 @@ let installPrompt = null;
 let authMode = 'signIn';
 let suggestedPeople = [];
 let activeSuggestion = -1;
+let currentSort = localStorage.getItem('ledgerly.sort') || 'name';
 // In-app history: every screen change is pushed into the browser history so
 // the phone's back button (and the ← arrow in the header) moves to the
 // previous screen instead of leaving the app.
@@ -115,7 +116,7 @@ function bindRows(container) {
 }
 
 function renderDashboard() {
-  const people = getPeople();
+  const people = getPeople(currentSort);
   const owing = people.filter((person) => person.balance > 0);
   const total = owing.reduce((sum, person) => sum + person.balance, 0);
   $('#totalOutstanding').textContent = money(total);
@@ -126,9 +127,9 @@ function renderDashboard() {
   bindRows($('#debtorList'));
 }
 
-function renderPeople(filter = '') {
+function renderPeople(filter = '', sortBy = currentSort) {
   const query = filter.trim().toLowerCase();
-  const people = getPeople().filter((person) => person.name.toLowerCase().includes(query));
+  const people = getPeople(sortBy).filter((person) => person.name.toLowerCase().includes(query));
   $('#allPeopleList').innerHTML = people.map(personRow).join('');
   $('#peopleEmpty').classList.toggle('hidden', people.length > 0);
   bindRows($('#allPeopleList'));
@@ -186,9 +187,10 @@ function hideSuggestions() {
 
 function renderSuggestions() {
   const field = $('#quickEntry');
+  if (/[+-]/.test(field.value)) return hideSuggestions();
   const query = currentNameQuery(field.value).toLowerCase();
   if (!query) return hideSuggestions();
-  suggestedPeople = getPeople().filter((person) => person.name.toLowerCase().startsWith(query)).slice(0, 6);
+  suggestedPeople = getPeople('name').filter((person) => person.name.toLowerCase().startsWith(query)).slice(0, 6);
   // A fully typed single match does not need to get in the way.
   if (!suggestedPeople.length || (suggestedPeople.length === 1 && suggestedPeople[0].name.toLowerCase() === query)) return hideSuggestions();
   $('#entrySuggestions').innerHTML = suggestedPeople.map((person, index) => `<button type="button" class="suggestion ${index === activeSuggestion ? 'active' : ''}" data-suggestion="${index}" role="option"><span class="avatar">${escapeHtml(person.name.charAt(0).toUpperCase())}</span><span>${escapeHtml(person.name)}</span><small>${money(person.balance)}</small></button>`).join('');
@@ -196,6 +198,49 @@ function renderSuggestions() {
   $('#entrySuggestions').querySelectorAll('[data-suggestion]').forEach((button) => button.addEventListener('mousedown', (event) => {
     event.preventDefault(); chooseSuggestion(Number(button.dataset.suggestion));
   }));
+}
+
+function insertSign(input, sign) {
+  if (!input) return;
+  input.focus();
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const val = input.value;
+  const before = val.slice(0, start);
+  const after = val.slice(end);
+
+  let insertText = sign;
+
+  if (input.id === 'quickEntry') {
+    if (before && /[a-zA-Z0-9]$/.test(before)) {
+      if (!/[+-]/.test(before)) {
+        insertText = ' ' + sign;
+      } else {
+        insertText = sign;
+      }
+    } else if (before && /[+-]$/.test(before)) {
+      const newBefore = before.slice(0, -1) + sign;
+      input.value = newBefore + after;
+      const pos = newBefore.length;
+      input.setSelectionRange(pos, pos);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+  } else {
+    if (before && /[+-]$/.test(before)) {
+      const newBefore = before.slice(0, -1) + sign;
+      input.value = newBefore + after;
+      const pos = newBefore.length;
+      input.setSelectionRange(pos, pos);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+  }
+
+  input.value = before + insertText + after;
+  const newPos = before.length + insertText.length;
+  input.setSelectionRange(newPos, newPos);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function chooseSuggestion(index) {
@@ -390,6 +435,33 @@ function setupEvents() {
     selectedType = button.dataset.type;
     document.querySelectorAll('.type-choice').forEach((item) => item.classList.toggle('selected', item === button));
   }));
+  // Sign buttons (+ / -) insertion for quick entry and person detail forms
+  document.querySelectorAll('.sign-btn[data-sign]').forEach((button) => {
+    const handleSign = (event) => {
+      event.preventDefault();
+      const targetId = button.dataset.target;
+      const targetInput = targetId ? $(`#${targetId}`) : null;
+      const sign = button.dataset.sign;
+      if (targetInput && sign) {
+        insertSign(targetInput, sign);
+      }
+    };
+    button.addEventListener('mousedown', handleSign);
+    button.addEventListener('click', handleSign);
+  });
+
+  // Sort dropdown in People view
+  const sortSelect = $('#sortPeople');
+  if (sortSelect) {
+    sortSelect.value = currentSort;
+    sortSelect.addEventListener('change', (event) => {
+      currentSort = event.target.value;
+      localStorage.setItem('ledgerly.sort', currentSort);
+      renderPeople($('#searchPeople').value, currentSort);
+      renderDashboard();
+    });
+  }
+
   $('#menuBtn').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   // On phones, tapping the page outside the menu closes the drawer.
   $('main').addEventListener('click', (event) => {
