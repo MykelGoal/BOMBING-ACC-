@@ -25,8 +25,14 @@ export function loadData() {
   return emptyData();
 }
 
-function save(data) {
+function save(data, notify = true) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  if (notify) window.dispatchEvent(new CustomEvent('ledgerly:data-changed', { detail: data }));
+}
+
+/** Used by cloud sync to safely hydrate this device from the signed-in account. */
+export function replaceData(data) {
+  save({ version: 2, customers: data.customers || [], transactions: data.transactions || [] }, false);
 }
 
 export function addCustomer({ name, phone = '', note = '' }) {

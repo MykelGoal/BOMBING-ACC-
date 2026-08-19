@@ -1,4 +1,5 @@
 import { addCustomer, addTransaction, exportRecords, getPeople, getPerson, removePerson, removeTransaction, updateTransaction } from './storage.js';
+import { initCloud, signInWithGoogle, signOut } from './cloud.js';
 import { escapeHtml, money, parseQuickEntry } from './format.js';
 import { $, personRow, setMessage, toast, transactionRow } from './ui.js';
 
@@ -217,6 +218,10 @@ function setupPwa() {
 function setupEvents() {
   $('#quickEntryForm').addEventListener('submit', saveQuickEntry);
   $('#newCustomerBtn').addEventListener('click', openCustomerDialog);
+  $('#authBtn').addEventListener('click', async () => {
+    if ($('#authBtn').dataset.signedIn) { await signOut(); return; }
+    try { await signInWithGoogle(); } catch (_) { toast('Google sign-in could not start. Please try again.'); }
+  });
   $('#installBtn').addEventListener('click', installApplication);
   $('#customerForm').addEventListener('submit', registerCustomer);
   $('#closeCustomerDialog').addEventListener('click', () => $('#customerDialog').close());
@@ -245,6 +250,18 @@ function init() {
   $('#today').textContent = new Intl.DateTimeFormat('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date());
   setupPwa();
   setupEvents(); renderDashboard();
+  window.addEventListener('ledgerly:cloud-status', (event) => {
+    $('#cloudState').textContent = event.detail === 'saved' ? '☁ Saved securely' : '⚠ Could not sync';
+  });
+  initCloud({
+    onUser: (user) => {
+      const button = $('#authBtn');
+      button.dataset.signedIn = user ? 'true' : '';
+      button.textContent = user ? 'Sign out' : 'Continue with Google';
+      $('#cloudState').textContent = user ? '☁ Syncing securely' : 'Saved on this device';
+    },
+    onReady: () => { renderDashboard(); if (!$('#detailView').classList.contains('hidden') && activePerson) openPerson(activePerson); }
+  }).catch(() => { $('#cloudState').textContent = 'Saved on this device'; });
 }
 
 init();

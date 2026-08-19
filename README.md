@@ -26,6 +26,15 @@ js/
   ui.js             Reusable DOM rendering helpers
 ```
 
+## Cloud login and sync
+
+The app is wired to the supplied Supabase project and supports Google sign-in. Before deploying it, the project owner must complete these two one-time dashboard steps:
+
+1. In **Supabase → SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). This creates the protected customer and transaction tables.
+2. In **Supabase → Authentication → Providers → Google**, enable Google, add a Google OAuth Client ID and Client Secret, then add the website URL to the allowed redirect URLs. Never commit or share the Google Client Secret.
+
+After that, customers choose **Continue with Google**. Their data is isolated by Row Level Security and syncs after each change.
+
 ## Run locally
 
 This is a dependency-free static website. Open `index.html` in a browser, or serve the project folder:
