@@ -1,7 +1,7 @@
-const CACHE_NAME = 'aj-dolly-ledger-v1';
+const CACHE_NAME = 'aj-dolly-ledger-v2';
 const APP_SHELL = [
   './', './index.html', './styles.css', './manifest.webmanifest',
-  './js/app.js', './js/storage.js', './js/format.js', './js/ui.js',
+  './js/app.js', './js/cloud.js', './js/supabase-config.js', './js/storage.js', './js/format.js', './js/ui.js',
   './assets/icon-192.png', './assets/icon-512.png'
 ];
 
@@ -14,10 +14,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-    const copy = response.clone();
-    if (new URL(event.request.url).origin === self.location.origin) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-    return response;
-  }).catch(() => caches.match('./index.html'))));
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+      const url = new URL(request.url);
+      // Cache the app shell AND the sign-in library (esm.sh) so refreshing —
+      // even offline — keeps the app and its saved session working.
+      if (response.ok && (url.origin === self.location.origin || url.hostname === 'esm.sh')) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    }).catch(() => {
+      // Only page navigations fall back to the shell. Serving HTML to a
+      // script/module request used to break the app offline.
+      if (request.mode === 'navigate') return caches.match('./index.html');
+      return undefined;
+    }))
+  );
 });

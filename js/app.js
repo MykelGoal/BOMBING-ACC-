@@ -9,13 +9,101 @@ let installPrompt = null;
 let authMode = 'signIn';
 let suggestedPeople = [];
 let activeSuggestion = -1;
+// In-app history: every screen change is pushed into the browser history so
+// the phone's back button (and the ← arrow in the header) moves to the
+// previous screen instead of leaving the app.
+let currentView = 'dashboard';
+let navDepth = 0;
 
-function showView(name) {
+function updateBackArrow() {
+  $('#topBackBtn').classList.toggle('hidden', navDepth <= 0);
+}
+
+function showView(name, { person = null, updateHistory = true } = {}) {
   ['dashboard', 'people', 'detail'].forEach((view) => $(`#${view}View`).classList.toggle('hidden', view !== name));
   document.querySelectorAll('.nav-link[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === name));
   if (window.innerWidth <= 800) $('.sidebar').classList.remove('open');
   if (name === 'dashboard') renderDashboard();
-  if (name === 'people') renderPeople();
+  if (name === 'people') renderPeople($('#searchPeople').value);
+  if (updateHistory) {
+    // Re-opening the same screen replaces the history entry instead of piling
+    // up duplicates, so "back" always feels like one real step.
+    const sameScreen = name === currentView && (name !== 'detail' || person === activePerson);
+    if (sameScreen) history.replaceState(history.state, '');
+    else { history.pushState({ appView: name, appPerson: person }, ''); navDepth += 1; }
+  }
+  currentView = name;
+  updateBackArrow();
+}
+
+/** Restore whatever screen a history entry represents (phone back button). */
+function restoreHistoryState(state) {
+  // Re-entering a dialog entry only happens when pressing Forward; reopen it.
+  if (state?.appDialog) {
+    navDepth = Math.max(1, navDepth);
+    const dialog = document.getElementById(state.appDialog);
+    if (dialog && !dialog.open) dialog.showModal();
+    updateBackArrow();
+    return;
+  }
+  const isRoot = !state || state.root;
+  navDepth = isRoot ? 0 : Math.max(0, navDepth - 1);
+  document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
+  const view = state?.appView || 'dashboard';
+  if (view === 'detail' && state.appPerson && getPerson(state.appPerson)) {
+    openPerson(state.appPerson, { updateHistory: false });
+  } else {
+    // The person may have been deleted since; fall back to the list.
+    showView(view === 'detail' ? 'people' : view, { updateHistory: false });
+  }
+  updateBackArrow();
+}
+
+/** Dialogs get their own history entry, so phone-back closes them first. */
+function openDialogWithBack(dialog) {
+  dialog.showModal();
+  history.pushState({ appDialog: dialog.id }, '');
+  navDepth += 1;
+  updateBackArrow();
+}
+
+function trackDialogInHistory(dialog) {
+  dialog.addEventListener('close', () => {
+    if (history.state?.appDialog === dialog.id) history.back();
+  });
+}
+
+/** Runs a step after the history clean-up from a closing dialog has settled,
+ *  so it does not race the popstate event and clobber the stack. */
+function afterHistorySettles(callback) {
+  let settled = false;
+  const run = () => {
+    if (settled) return;
+    settled = true;
+    window.removeEventListener('popstate', run);
+    callback();
+  };
+  window.addEventListener('popstate', run);
+  window.setTimeout(run, 350);
+}
+
+/** Called once at start-up: adopt any screen that was open before a refresh. */
+function initHistory() {
+  const existing = history.state;
+  if (existing?.appView === 'detail' && existing.appPerson && getPerson(existing.appPerson)) {
+    openPerson(existing.appPerson, { updateHistory: false });
+    history.replaceState(existing, '');
+    navDepth = 1;
+  } else if (existing?.appView === 'people') {
+    showView('people', { updateHistory: false });
+    history.replaceState(existing, '');
+    navDepth = 1;
+  } else {
+    history.replaceState({ appView: 'dashboard', root: true }, '');
+    navDepth = 0;
+    showView('dashboard', { updateHistory: false });
+  }
+  updateBackArrow();
 }
 
 function bindRows(container) {
@@ -46,7 +134,7 @@ function renderPeople(filter = '') {
   bindRows($('#allPeopleList'));
 }
 
-function openPerson(name) {
+function openPerson(name, { updateHistory = true } = {}) {
   const person = getPerson(name);
   if (!person) return;
   activePerson = person.name;
@@ -60,7 +148,7 @@ function openPerson(name) {
   $('#personAmount').value = '';
   $('#personNote').value = '';
   setMessage($('#personFormMessage'), '');
-  showView('detail');
+  showView('detail', { person: person.name, updateHistory });
 }
 
 function bindTransactionActions(person) {
@@ -156,7 +244,11 @@ function savePersonEntry(event) {
   event.preventDefault();
   const amount = Number($('#personAmount').value.replaceAll(',', ''));
   if (!Number.isFinite(amount) || amount <= 0) return setMessage($('#personFormMessage'), 'Enter an amount greater than zero.');
-  addTransaction({ person: activePerson, amount, type: selectedType, note: $('#personNote').value });
+  try {
+    addTransaction({ person: activePerson, amount, type: selectedType, note: $('#personNote').value });
+  } catch (error) {
+    return setMessage($('#personFormMessage'), error.message);
+  }
   toast('Entry saved');
   openPerson(activePerson);
 }
@@ -172,7 +264,7 @@ function renderAuthDialog() {
 
 function openAuthDialog() {
   $('#authForm').reset(); setMessage($('#authFormMessage'), ''); renderAuthDialog();
-  $('#authDialog').showModal(); $('#authEmail').focus();
+  openDialogWithBack($('#authDialog')); $('#authEmail').focus();
 }
 
 async function submitAuth(event) {
@@ -205,7 +297,7 @@ async function submitAuth(event) {
 function openCustomerDialog() {
   $('#customerForm').reset();
   setMessage($('#customerFormMessage'), '');
-  $('#customerDialog').showModal();
+  openDialogWithBack($('#customerDialog'));
   $('#customerName').focus();
 }
 
@@ -218,7 +310,9 @@ function registerCustomer(event) {
     $('#customerDialog').close();
     renderDashboard();
     toast(`${customer.name} was registered`);
-    openPerson(customer.name);
+    // Wait for the dialog's history clean-up so the person page lands on a
+    // clean stack entry (phone back then returns to the overview).
+    afterHistorySettles(() => openPerson(customer.name));
   } catch (error) {
     setMessage($('#customerFormMessage'), error.message);
   }
@@ -262,7 +356,10 @@ function setupEvents() {
   $('#quickEntryForm').addEventListener('submit', saveQuickEntry);
   $('#newCustomerBtn').addEventListener('click', openCustomerDialog);
   $('#authBtn').addEventListener('click', async () => {
-    if ($('#authBtn').dataset.signedIn) { await signOut(); return; }
+    if ($('#authBtn').dataset.signedIn) {
+      try { await signOut(); } catch (error) { toast(error.message || 'Could not sign out. Please try again.'); }
+      return;
+    }
     openAuthDialog();
   });
   $('#authForm').addEventListener('submit', submitAuth);
@@ -276,7 +373,11 @@ function setupEvents() {
   $('#quickEntry').addEventListener('blur', () => window.setTimeout(hideSuggestions, 120));
   $('#personEntryForm').addEventListener('submit', savePersonEntry);
   $('#newEntryBtn').addEventListener('click', () => { showView('dashboard'); $('#quickEntry').focus(); });
-  $('#backBtn').addEventListener('click', () => showView('people'));
+  $('#backBtn').addEventListener('click', () => { if (navDepth > 0) history.back(); else showView('people'); });
+  $('#topBackBtn').addEventListener('click', () => { if (navDepth > 0) history.back(); });
+  window.addEventListener('popstate', (event) => restoreHistoryState(event.state));
+  trackDialogInHistory($('#customerDialog'));
+  trackDialogInHistory($('#authDialog'));
   $('#exportBtn').addEventListener('click', downloadExport);
   $('#searchPeople').addEventListener('input', (event) => renderPeople(event.target.value));
   $('#deletePersonBtn').addEventListener('click', () => {
@@ -299,9 +400,11 @@ function setupEvents() {
 function init() {
   $('#today').textContent = new Intl.DateTimeFormat('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date());
   setupPwa();
-  setupEvents(); renderDashboard();
+  setupEvents();
+  initHistory();
   window.addEventListener('ledgerly:cloud-status', (event) => {
-    $('#cloudState').textContent = event.detail === 'saved' ? '☁ Saved securely' : '⚠ Could not sync';
+    const labels = { saved: '☁ Saved securely', error: '⚠ Could not sync', offline: '⚡ Offline — saved on this device' };
+    $('#cloudState').textContent = labels[event.detail] || 'Saved on this device';
   });
   initCloud({
     onUser: (user) => {
